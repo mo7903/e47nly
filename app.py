@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY") # export FLASK_SECRET_KEY=
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
-app.config["MAIL_USERNAME"] = "m.gomaa.abd@gmail.com"  # Sender Email
+app.config["MAIL_USERNAME"] = "email"  # Sender Email
 app.config["MAIL_PASSWORD"] = "password"  # Sender App Password
 app.config["MAIL_USE_TLS"] = False
 app.config["MAIL_USE_SSL"] = True
