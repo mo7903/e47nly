@@ -1,12 +1,12 @@
-from flask import Flask, request, session, redirect, url_for, jsonify
-from flask_session import Session
-from flask_mail import Mail, Message
-from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import check_email, login_required, validate_pass, log_request
+import os
 from secrets import token_hex
 from datetime import datetime, timedelta
 from cs50 import SQL
-import os
+from flask_mail import Mail, Message
+from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Flask, request, session, redirect, url_for, jsonify
+from flask_session import Session
+from helpers import check_email, login_required, validate_pass, log_request
 
 app = Flask(__name__)
 
@@ -220,7 +220,7 @@ def identify(mode, id):
         profile = db.execute("SELECT id, fullname, phone_number, birthdate, vehicle FROM ? WHERE id = ?", mode, id)[0]
         profile.pop("password", None)
         return jsonify(profile)
-    except:
+    except BaseException:
         return ("Invalid ID", 400)
 
 if __name__ == "__main__":
