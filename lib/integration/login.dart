@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class Login {
+class LoginInt {
   String email;
   String password;
 
-  Login({required this.email, required this.password});
+  LoginInt({required this.email, required this.password});
 }
 
 class TodoProvider with ChangeNotifier {
