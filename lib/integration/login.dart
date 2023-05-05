@@ -1,25 +1,29 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:eshnly/Screens/login_page.dart';
-import 'package:eshnly/main.dart';
-import 'package:eshnly/Screens/welcome_screen.dart';
 import 'package:http/http.dart' as http;
 
-class login{
-  String username;
+class Login {
+  String email;
   String password;
 
-  login({required this.username, required this.password});
+  Login({required this.email, required this.password});
 }
 
-
 class TodoProvider with ChangeNotifier {
-  final url = 'http://127.0.0.1:5000/login';
-  Future<void> addTodo(String task) async {
-    Map<String, dynamic> request = { "is_executed": false};
-    final headers = {'Content-Type': 'application/json'};
-    final response = await http.get(Uri.parse(url), headers: headers);
-    Map<String, dynamic> responsePayload = json.decode(response.body);
+  final url = 'http://127.0.0.1:5000/ev_owners/login';
 
-}}
+  Future<String> login(String email, String password) async {
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode({'email': email, 'password': password});
+    final response = await http.post(Uri.parse(url), headers: headers, body: body);
+    final responsePayload = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      // Login successful
+      return '';
+    } else {
+      // Login failed
+      return responsePayload['error'] ?? 'An error occurred while logging in';
+    }
+  }
+}

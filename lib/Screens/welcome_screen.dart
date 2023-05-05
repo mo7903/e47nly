@@ -39,13 +39,13 @@ class Welcome extends StatelessWidget {
             Container(
               margin: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
               child: ElevatedButton(
-                onPressed: (
-
-                ) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => Login())
-                  );
-                },
+                onPressed: () {}
+                // {
+                //   Navigator.of(context).push(
+                //     MaterialPageRoute(builder: (context) => login())
+                //   );
+                // }
+                ,
                 style: ElevatedButton.styleFrom(
                   primary: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
