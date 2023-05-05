@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class LoginInt {
+class Login {
   String email;
   String password;
 
-  LoginInt({required this.email, required this.password});
+  Login({required this.email, required this.password});
 }
 
 class TodoProvider with ChangeNotifier {
-  final url = 'http://127.0.0.1:5000/ev_owners/login';
+  final url = 'http://192.168.1.7:5000/login/ev_owners';
 
   Future<String> login(String email, String password) async {
     final headers = {'Content-Type': 'application/json'};
