@@ -6,7 +6,7 @@ from helpers import check_email, login_required, validate_pass
 from secrets import token_hex
 from datetime import datetime, timedelta
 from cs50 import SQL
-import os, logging
+import os, logging, json
 
 app = Flask(__name__)
 
@@ -227,39 +227,124 @@ def reset_password(mode, token):
 def request_charge():
     """Request a charge"""
     charger_id = request.form.get("charger_id")
+    location = request.form.get("location")
     current_time = datetime.now()
 
-    id = db.execute("INSERT INTO charges (ev_owner_id, charger_id, request_time, status) VALUES (?, ?, ?, ?)",
-                   session["user_id"], charger_id, current_time, "requested")
+    charge_id = db.execute("INSERT INTO charges (ev_owner_id, charger_id, request_time, location, status) VALUES (?, ?, ?, ?, 'requested')",
+                   session["user_id"], charger_id, current_time, location)
     
-    return jsonify(id=id, sess=session["user_id"])
+    return jsonify(charge_id=charge_id, session=session["user_id"])
 
+@app.route("/arrive/<int:charge_id>", methods=["POST"])
+def arrive(charge_id):
+    """Marks arrival for a requested charge"""
+    current_time = datetime.now()
+    n = db.execute("UPDATE charges SET arrival_time = ?, status = 'arrived' WHERE id = ?", current_time, charge_id)
+    if n == 1:
+        response = jsonify(message="Successfully Arrived")
+        response.status_code = 200
+        return response
+    else:
+        response = jsonify(message="Charge not found")
+        response.status_code = 406
+        return response
+
+@app.route("/end_charge/<int:charge_id>", methods=["POST"])
+def end_charge(charge_id):
+    """Ends an ongoing charge"""
+    current_time = datetime.now()
+    receipt_id = request.form.get("receipt_id")
+    n = db.execute("UPDATE charges SET end_time = ?, status = 'ended', receipt_id = ? WHERE id = ?", current_time, receipt_id, charge_id)
+    if n == 1:
+        response = jsonify(message="Successfully Ended")
+        response.status_code = 200
+        return response
+    else:
+        response = jsonify(message="Charge not found")
+        response.status_code = 406
+        return response
 
 @app.route("/identify/<mode>/<int:id>")
 def identify(mode, id):
     """Queries the database for user using id"""
-
-    # Add authentication check here
-    ...
-
-    if mode not in ["ev_owners", "charger_owners"]:
+    if mode == "ev_owners":
+        try:
+            # Returns everything except mail and password
+            profile = db.execute("SELECT id, fullname, phone_number, birthdate, vehicle FROM ev_owners WHERE id = ?", id)[0]
+            profile.pop("password", None)
+            return jsonify(profile)
+        
+        except:
+            response = jsonify(error="Invalid ID")
+            response.status_code = 400
+            logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
+            return response
+        
+    elif mode == "charger_owners":
+        try:
+            # Returns everything except mail and password
+            profile = db.execute("SELECT id, fullname, phone_number, rating, charger_type FROM charger_owners WHERE id = ?", id)[0]
+            profile.pop("password", None)
+            return jsonify(profile)
+        
+        except:
+            response = jsonify(error="Invalid ID")
+            response.status_code = 400
+            logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
+            return response
+    
+    else:
         response = jsonify(error="Invalid Mode")
         response.status_code = 401
         logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
         return response
-    
+
+@app.route("/rate", methods=["POST"])
+def rate():
+    """Adds rating to ratings table"""
     try:
-        # Returns everything except mail and password
-        profile = db.execute("SELECT id, fullname, phone_number, birthdate, vehicle FROM ? WHERE id = ?", mode, id)[0]
-        profile.pop("password", None)
-        return jsonify(profile)
-    
+        rate = request.form.get("rate")
+        charger_id = request.form.get("charger_id")
+        rater = request.form.get("rater_id")
+        db.execute("INSERT INTO ratings (charger_id, rating, rater_id) VALUES (?, ?, ?)", charger_id, rate, rater)
+        avg = db.execute("SELECT AVG(rating) FROM ratings WHERE charger_id = ? GROUP BY charger_id", charger_id)[0]["AVG(rating)"]
+        db.execute("UPDATE charger_owners SET rating = ? WHERE id = ?", avg, charger_id)
+        return jsonify(rate=avg)
+
     except:
         response = jsonify(error="Invalid ID")
         response.status_code = 400
         logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
         return response
 
+@app.route("/history/<mode>/<int:id>", methods=["GET"])
+def history(mode, id):
+    """Queries the database for user history using id"""
+    if mode == "ev_owners":
+        try:
+            charges = db.execute("SELECT * FROM charges WHERE ev_owner_id = ? ORDER BY request_time", id)
+            response = jsonify(charges)
+            return response
+        except:
+            response = jsonify(error="Invalid ID")
+            response.status_code = 400
+            logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
+            return response
+    elif mode == "charger_owners":
+        try:
+            charges = db.execute("SELECT * FROM charges WHERE charger_id = ? ORDER BY request_time", id)
+            response = jsonify(charges)
+            return response
+        except:
+            response = jsonify(error="Invalid ID")
+            response.status_code = 400
+            logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
+            return response
+    else:
+        response = jsonify(error="Invalid Mode")
+        response.status_code = 401
+        logger.error(f"Error in {request.method} {request.url}: {response.status_code}")
+        return response
 
 if __name__ == "__main__":
     app.run(debug=True, threaded=False)
